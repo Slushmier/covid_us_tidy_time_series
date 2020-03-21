@@ -4,3 +4,5 @@
 .Ruserdata
 *.Rproj
 \csse_covid_19_data
+account.R
+deployApp.R
