@@ -45,7 +45,12 @@ ui <- fluidPage(
         light red bands are 80% confidence intervals."),
       br(),
       p("Data comes from Johns Hopkins University COVID-19 Github page: 
-        https://github.com/CSSEGISandData/COVID-19")
+        https://github.com/CSSEGISandData/COVID-19"),
+      br(),
+      p("Projections are done with the forecast package in R."),
+      br(),
+      p("Note: I am definitely not an epidemiologist; ask one for more 
+        information on Covid-19.")
       ),
   
       mainPanel(
