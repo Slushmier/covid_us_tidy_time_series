@@ -2,9 +2,13 @@ library(shiny)
 library(tidyverse)
 library(lubridate)
 library(forecast)
+library(scales)
 
 state_output <- function(input_state){
-  filtered <- covid_ts %>% dplyr::filter(state == input_state, date >= "2020-03-01")
+  
+  filtered <- covid_ts %>% dplyr::filter(state == input_state)
+  disp_date <- dplyr::filter(filtered, Type == 'Active', Number >= 1)
+  disp_date <- disp_date[1, 2]
   #filtered$date <- as_date(filtered$date, format = "%m/%d/%Y", tz = "UTC")
   #filtered <- filtered %>%  mutate(Active = Confirmed - Deaths - Recovered)
   #filtered <- gather(filtered, key = "Type", value = "Number",
@@ -19,7 +23,10 @@ state_output <- function(input_state){
                               aes(x = date, y = Number), color = "red",
                               showgap = F) +
     ggtitle(paste0(input_state, " Covid Cases and Projections")) +
-    theme(legend.title.align=0.5) + xlab("Date")
+    theme(legend.title.align=0.5) + xlab("Date") +
+    scale_x_date(date_breaks = "1 week",
+                 labels = date_format("%d-%b"),
+                 limits = (c(disp_date$date - 5, Sys.Date() + 10)))
 }
 
 covid_ts <- read_csv("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/covid_us_time_series.csv")
@@ -39,6 +46,7 @@ ui <- fluidPage(
       
       selectInput("stateinput",
               label = "State:",
+              selected = "DC",
               choices = states),
       p("The red bands are ten day projections for numbers of Covid-19 cases.
         The narrow, dark red bands are 95% confidence intervals, the wider, 
