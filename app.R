@@ -9,14 +9,7 @@ state_output <- function(input_state){
   filtered <- covid_ts %>% dplyr::filter(state == input_state)
   disp_date <- dplyr::filter(filtered, Type == 'Active', Number >= 1)
   disp_date <- disp_date[1, 2]
-  #filtered$date <- as_date(filtered$date, format = "%m/%d/%Y", tz = "UTC")
-  #filtered <- filtered %>%  mutate(Active = Confirmed - Deaths - Recovered)
-  #filtered <- gather(filtered, key = "Type", value = "Number",
-  #                   Confirmed, Deaths, Recovered, Active)
-  #
-  # There are some results that do not make sense
-  # filtered_ts <- dplyr::filter(filtered, Type == 'Active') %>% 
-  #   select(date, Number) %>% ts()
+
   filtered_gg <- ggplot(data = filtered) +
     geom_line(aes(x = date, y = Number, color = Type))
   filtered_gg + geom_forecast(data = dplyr::filter(filtered, Type == "Active"),
@@ -57,7 +50,7 @@ ui <- fluidPage(
       br(),
       p("Projections are done with the forecast package in R."),
       br(),
-      p("The 'recovered' cases have been aggregared into US totals, so are not
+      p("The 'recovered' cases have been aggregated into US totals, so are not
         currently accurate at the state level."),
       br(),
       p("Note: I am definitely not an epidemiologist; ask one for more 
