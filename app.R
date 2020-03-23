@@ -57,6 +57,9 @@ ui <- fluidPage(
       br(),
       p("Projections are done with the forecast package in R."),
       br(),
+      p("The 'recovered' cases have been aggregared into US totals, so are not
+        currently accurate at the state level."),
+      br(),
       p("Note: I am definitely not an epidemiologist; ask one for more 
         information on Covid-19.")
       ),
