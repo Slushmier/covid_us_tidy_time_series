@@ -4,6 +4,8 @@ reports <- list.files("csse_covid_19_data\\csse_covid_19_daily_reports",
                       pattern = ".csv")
 
 varnames <- c()
+
+### Variable names change with 3/23 daily report
 for(report in reports){
   varname <- substr(report, 0, nchar(report) - 4)
   varname <- paste0("daily_", varname)
@@ -12,10 +14,19 @@ for(report in reports){
   report_run <- paste0("csse_covid_19_data\\csse_covid_19_daily_reports\\", report)
   exp <- paste0(varname, " <- read_csv(report_run)")
   eval(parse(text = exp))
-  exp_2 <- paste0(varname, " <- dplyr::filter(", varname, ",`Country/Region` == 'US')")
+  exp_2b <- paste0(varname, " <- ", varname,
+                   " %>% purrr::set_names(~str_replace_all(., '/', '_'))")
+  eval(parse(text = exp_2b))
+  exp_2 <- paste0(varname, " <- dplyr::filter(", varname, ",`Country_Region` == 'US')")
   eval(parse(text = exp_2))
+  # Example: daily_03_22_2020 <- daily_03_22_2020 %>% 
+  #            purrr::set_names(~str_replace_all(., "/", "_"))
+
   print(report)
 }
+
+### Accounts for format change from 3/23 daily report forward
+
 
 state_abbs <- data.frame(name = state.name, state = state.abb)
 state_abbs$name <- as.character(state_abbs$name)
@@ -30,7 +41,7 @@ state_abbs <- rbind(state_abbs, c("District of Columbia", "DC"),
 
 for(i in seq(1, 10, by = 1)){
   exp_3 <- paste0(varnames[i], " <- left_join(", varnames[i],
-                  " , state_abbs, by = c('Province/State' = 'name'))")
+                  " , state_abbs, by = c('Province_State' = 'name'))")
   eval(parse(text = exp_3))
   exp_8 <- paste0(varnames[i], "$date <- substr('", as.character(varnames[i]),
                   "', 7, 16)")
@@ -38,7 +49,7 @@ for(i in seq(1, 10, by = 1)){
 }
 
 for(i in seq(11, 48, by = 1)){
-  var_prov <- paste0(varnames[i], "$`Province/State`")
+  var_prov <- paste0(varnames[i], "$`Province_State`")
   exp_4 <- paste0(var_prov, " <- ifelse(", var_prov,
                   " == 'Washington, D.C.', 'Washington, DC', ", var_prov, ")")
   eval(parse(text = exp_4))
@@ -65,14 +76,14 @@ for(i in seq(11, 48, by = 1)){
   eval(parse(text = exp_8))
   }
 
-for(i in seq(49, nrow(varnames), by = 1)){
+for(i in seq(49, length(varnames), by = 1)){
   #Standardize US Virgin Islands annotations
-  var_prov <- paste0(varnames[i], "$`Province/State`")
+  var_prov <- paste0(varnames[i], "$`Province_State`")
   exp_4b <- paste0(var_prov, " <- ifelse(", var_prov,
                    " == 'Virgin Islands, U.S.', 'Virgin Islands', ", var_prov, ")")
   eval(parse(text = exp_4b))
   exp_3 <- paste0(varnames[i], " <- left_join(", varnames[i],
-                  " , state_abbs, by = c('Province/State' = 'name'))")
+                  " , state_abbs, by = c('Province_State' = 'name'))")
   eval(parse(text = exp_3))
   exp_8 <- paste0(varnames[i], "$date <- substr('", as.character(varnames[i]),
                   "', 7, 16)")
