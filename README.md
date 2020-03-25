@@ -14,6 +14,7 @@ and territories
 **covid_us_time_series.csv** - The most recently updated tidy, time-series dataset of the JHU data. I upload this either every
 day after the District of Columbia announces new cases or early the following morning. Contains colums for state, date, Confirmed,
 Deaths, Recovered, and New Cases  
+**covid_us_time_series_aggregate.csv** - Same as above; has aggregate counts for whole country  
 **simplify_spatial.R** - simplifies a TIGR counties shapefile and merges it with population counts; probably only works on my computer  
 **testing_data.R** - Pulls and writes a CSV of the dataset compiled at https://covidtracking.com/api/states/daily  
 
