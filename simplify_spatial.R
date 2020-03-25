@@ -16,4 +16,24 @@ fips$ALANDKMSQ <- fips$ALAND/1e6
 fips$AWATERKMSQ <- fips$AWATER/1e6
 fips <- fips %>% select(-ALAND, -AWATER, -LSAD, -CLASSFP, -MTFCC, -CSAFP,
                         -CBSAFP, -METDIVFP, -FUNCSTAT, -INTPTLAT, -INTPTLON)
-st_write(fips, "Data\\counties_simple.shp", delete_dsn = T)
+
+population <- read_csv('csse_covid_19_data\\co-est2018-alldata.csv') %>% 
+  select(SUMLEV, STATE, COUNTY, STNAME, CTYNAME, CENSUS2010POP, POPESTIMATE2018)
+population$STATE <- as.character(population$STATE)
+population$COUNTY <- as.character(population$COUNTY)
+population$STATE <- ifelse(nchar(population$STATE) == 1,
+                           paste0("0", population$STATE),
+                           population$STATE)
+population$COUNTY <- ifelse(nchar(population$COUNTY) < 3,
+                            paste0("0", population$COUNTY),
+                            population$COUNTY)
+population$COUNTY <- ifelse(nchar(population$COUNTY) < 3,
+                            paste0("0", population$COUNTY),
+                            population$COUNTY)
+population$FIPS <- paste0(population$STATE, population$COUNTY)
+
+fips_pop <- left_join(fips, population, by = c("GEOID" = "FIPS"))
+
+write_csv(dplyr::filter(population, SUMLEV == 40), "Data\\state_pop.csv")
+write_csv(dplyr::filter(population, SUMLEV == 50), "Data\\county_pop.csv")
+st_write(fips_pop, "Data\\counties_simple.shp", delete_dsn = T)
