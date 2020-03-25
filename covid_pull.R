@@ -121,6 +121,25 @@ covid_us_ts$date <- str_replace_all(covid_us_ts$date, "_", "/")
 
 covid_us_ts<- covid_us_ts %>% group_by(state, date) %>% 
   summarize(Confirmed = sum(Confirmed), Deaths = sum(Deaths), 
-            Recovered = sum(Recovered))
+            Recovered = sum(Recovered)) 
+
+covid_us <- covid_us_ts %>% group_by(date) %>% 
+  summarize( Confirmed = sum(Confirmed), Deaths = sum(Deaths),
+             Recovered = sum(Recovered)) %>% 
+  mutate(Active = Confirmed - Deaths - Recovered,
+         New = Active - lag(Active)) %>%
+  replace_na(list(New = 1))
+
+covid_us_ts <- covid_us_ts %>% mutate(Active = Confirmed - Deaths - Recovered,
+                      New = Active - lag(Active)) %>% 
+  replace_na(list(Active = 0, New = 0)) %>% 
+  dplyr::filter(!is.na(state)) %>% select(-Recovered)
+
+covid_us$New <- ifelse(covid_us$New < 0, 0, covid_us$New)
+covid_us$Recovered <- ifelse(covid_us$Recovered < lag(covid_us$Recovered),
+                             lag(covid_us$Recovered), covid_us$Recovered)
+covid_us <- covid_us %>% replace_na(list(Recovered = 0))
+covid_us_ts$New <- ifelse(covid_us_ts$New < 0, 0, covid_us_ts$New)
 
 write_csv(covid_us_ts, "covid_us_time_series.csv")
+write_csv(covid_us, "covid_us_time_series_aggregate.csv")
