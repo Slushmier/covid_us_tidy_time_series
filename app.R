@@ -69,21 +69,27 @@ ui <- fluidPage(
               label = "State:",
               selected = "All US",
               choices = states),
-      p("The red bands are ten day projections for numbers of Covid-19 cases.
-        The narrow, dark red bands are 95% confidence intervals, the wider, 
-        light red bands are 80% confidence intervals."),
-      br(),
-      p("Data comes from Johns Hopkins University COVID-19 Github page: 
-        https://github.com/CSSEGISandData/COVID-19"),
-      br(),
-      p("Projections are done with the forecast package in R."),
-      br(),
-      p("Note: I am definitely not an epidemiologist; ask one for more 
-        information on Covid-19.")
+        p("The red bands are ten day projections for numbers of Covid-19 cases.
+          The narrow, dark red bands are 95% confidence intervals, the wider, 
+          light red bands are 80% confidence intervals."),
+        br(),
+        p("Data comes from",
+        tags$a(href = "https://github.com/CSSEGISandData/COVID-19",
+        "the Johns Hopkins University COVID-19 Github page.")),
+        br(),
+        p("Projections are done with the forecast package in R."),
+        br(),
+        p("Note: I am definitely not an epidemiologist; ask one for more 
+        information on Covid-19.",  
+        tags$a(href = "https://github.com/Slushmier/covid_us_tidy_time_series", 
+                    "Here is the GitHub repository for this page."))
       ),
   
       mainPanel(
-        plotOutput("plot")
+        tabsetPanel(type = "tabs", 
+                    tabPanel("Plot", plotOutput("plot")),
+                    tabPanel("Data", tableOutput("table"))
+        )
       )
     )
   )
@@ -92,6 +98,21 @@ server <- function(input, output){
   output$plot <- renderPlot({
     state_output(input$stateinput)
   })
+  output$table <- renderTable({
+    if(input$stateinput == "All US") {
+      dataout <- covid_us %>% 
+        spread(key = Type, value = Number) %>% 
+        arrange(desc(date))
+      dataout$date <- as.character(dataout$date)
+    } else {
+      dataout <- covid_ts %>%
+        dplyr::filter(state == input$stateinput) %>% 
+        spread(key = Type, value = Number) %>% 
+        arrange(desc(date))
+      dataout$date <- as.character(dataout$date)
+    }
+    dataout}, digits = 0
+  )
 }
 
 shinyApp(ui, server)
