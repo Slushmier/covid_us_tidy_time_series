@@ -27,7 +27,6 @@ for(report in reports){
 
 ### Accounts for format change from 3/23 daily report forward
 
-
 state_abbs <- data.frame(name = state.name, state = state.abb)
 state_abbs$name <- as.character(state_abbs$name)
 state_abbs$state <- as.character(state_abbs$state)
@@ -50,6 +49,7 @@ for(i in seq(1, 10, by = 1)){
 
 for(i in seq(11, 48, by = 1)){
   var_prov <- paste0(varnames[i], "$`Province_State`")
+
   exp_4 <- paste0(var_prov, " <- ifelse(", var_prov,
                   " == 'Washington, D.C.', 'Washington, DC', ", var_prov, ")")
   eval(parse(text = exp_4))
@@ -76,12 +76,34 @@ for(i in seq(11, 48, by = 1)){
   eval(parse(text = exp_8))
   }
 
-for(i in seq(49, length(varnames), by = 1)){
+for(i in seq(49, 61, by = 1)){
   #Standardize US Virgin Islands annotations
   var_prov <- paste0(varnames[i], "$`Province_State`")
   exp_4b <- paste0(var_prov, " <- ifelse(", var_prov,
                    " == 'Virgin Islands, U.S.', 'Virgin Islands', ", var_prov, ")")
   eval(parse(text = exp_4b))
+  exp_3 <- paste0(varnames[i], " <- left_join(", varnames[i],
+                  " , state_abbs, by = c('Province_State' = 'name'))")
+  eval(parse(text = exp_3))
+  exp_8 <- paste0(varnames[i], "$date <- substr('", as.character(varnames[i]),
+                  "', 7, 16)")
+  eval(parse(text = exp_8))
+}
+
+var_counties <- c()
+for(i in seq(62, length(varnames), by = 1)){
+  #Standardize US Virgin Islands annotations
+  var_prov <- paste0(varnames[i], "$`Province_State`")
+  exp_4b <- paste0(var_prov, " <- ifelse(", var_prov,
+                   " == 'Virgin Islands, U.S.', 'Virgin Islands', ", var_prov, ")")
+  eval(parse(text = exp_4b))
+  
+  # Copying county numbers to separate data frames for later export
+  var_county <- paste0(varnames[i], "_county")
+  exp_4c <- paste0(var_county, " <- ", varnames[i])
+  eval(parse(text = exp_4c))
+  var_counties <- rbind(var_counties, var_county)
+  
   exp_3 <- paste0(varnames[i], " <- left_join(", varnames[i],
                   " , state_abbs, by = c('Province_State' = 'name'))")
   eval(parse(text = exp_3))
@@ -105,10 +127,12 @@ for(i in seq(1, nrow(varnames), by = 1)){
   eval(parse(text = exp_10))
 }
 
+# Create state time-series
 for(i in seq(1, nrow(varnames), 1)){
   if(exists("covid_us_ts")){
     #Example: covid_us_ts <- rbind(covid_us_ts, daily_01_23_2020)
-    exp_11 <- paste0("covid_us_ts <- rbind(covid_us_ts, ", varnames[i], ")")
+    exp_11 <- paste0("covid_us_ts <- rbind(covid_us_ts, ",
+                     varnames[i], ")")
     eval(parse(text = exp_11))
   }
   else{
@@ -116,6 +140,21 @@ for(i in seq(1, nrow(varnames), 1)){
     eval(parse(text = exp_12))
   }
 }
+
+### Counties
+for(i in seq(1, nrow(var_counties), 1)){
+  if(exists("covid_us_ts_counties")){
+    #Example: covid_us_ts_counties <- rbind(covid_us_ts_counties, daily_01_23_2020_county)
+    exp_11 <- paste0("covid_us_ts_counties <- rbind(covid_us_ts_counties, ", var_counties[i], ")")
+    eval(parse(text = exp_11))
+  }else{
+    exp_12 <- paste0("covid_us_ts_counties <- ", var_counties[i])
+    eval(parse(text = exp_12))
+  }
+}
+
+covid_us_ts_counties <- covid_us_ts_counties %>%
+  dplyr::filter(!is.na(FIPS))
 
 covid_us_ts$date <- str_replace_all(covid_us_ts$date, "_", "/")
 
@@ -141,5 +180,6 @@ covid_us$Recovered <- ifelse(covid_us$Recovered < lag(covid_us$Recovered),
 covid_us <- covid_us %>% replace_na(list(Recovered = 0))
 covid_us_ts$New <- ifelse(covid_us_ts$New < 0, 0, covid_us_ts$New)
 
+write_csv(covid_us_ts_counties, "covid_us_time_series_counties.csv")
 write_csv(covid_us_ts, "covid_us_time_series.csv")
 write_csv(covid_us, "covid_us_time_series_aggregate.csv")
