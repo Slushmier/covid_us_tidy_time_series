@@ -90,7 +90,7 @@ covid_us$date <- as_date(covid_us$date, format = "%m/%d/%Y", tz = "UTC")
 states <- covid_ts %>% dplyr::distinct(state) %>% arrange()
 states <- rbind("All US", states)
 
-state_all <- st_read("Data//state_all.geojson")
+state_all <- st_read("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/Data/state_all.geojson")
 
 ui <- fluidPage(
   titlePanel("Covid-19 Cases by State with 10-day Projections"),
@@ -121,13 +121,13 @@ ui <- fluidPage(
   
       mainPanel(
         tabsetPanel(type = "tabs", 
-                    tabPanel("Plot", plotOutput("plot")),
-                    tabPanel("Data", tableOutput("table")),
-                    tabPanel("US Testing", leafletOutput("usmap"))
+                    tabPanel("Case Projections", plotOutput("plot")),
+                    tabPanel("US Testing", leafletOutput("usmap")),
+                    tabPanel("Data", tableOutput("table"))
+                    )
         )
       )
     )
-  )
   
 server <- function(input, output){
   output$plot <- renderPlot({
