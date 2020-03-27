@@ -166,11 +166,11 @@ covid_us <- covid_us_ts %>% group_by(date) %>%
   summarize( Confirmed = sum(Confirmed), Deaths = sum(Deaths),
              Recovered = sum(Recovered)) %>% 
   mutate(Active = Confirmed - Deaths - Recovered,
-         New = Active - lag(Active)) %>%
+         New = Confirmed - lag(Confirmed)) %>%
   replace_na(list(New = 1))
 
 covid_us_ts <- covid_us_ts %>% mutate(Active = Confirmed - Deaths - Recovered,
-                      New = Active - lag(Active)) %>% 
+                      New = Confirmed - lag(Confirmed)) %>% 
   replace_na(list(Active = 0, New = 0)) %>% 
   dplyr::filter(!is.na(state)) %>% select(-Recovered)
 
