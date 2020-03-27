@@ -7,3 +7,6 @@
 account.R
 deployApp.R
 \rsconnect
+testingAnalysis.Rmd
+updateData.R
+updateUsStates.R
