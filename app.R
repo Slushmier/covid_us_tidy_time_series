@@ -3,6 +3,8 @@ library(tidyverse)
 library(lubridate)
 library(forecast)
 library(scales)
+library(sf)
+library(leaflet)
 
 state_output <- function(input_state){
   if(input_state == "All US") {
@@ -45,6 +47,36 @@ state_output <- function(input_state){
                  limits = (c(disp_date$date - 5, Sys.Date() + 10)))
 }
 
+# Popup for US map, will move
+state_popup <- paste0("<strong>Covid-19 Data by State</strong>",
+                      "<br><br><strong>State: </strong>", 
+                      state_all$stat_nm, 
+                      "<br><strong>Date of Data: </strong>", 
+                      state_all$date,
+                      "<br><strong>2018 Population Estimate (census):
+                      </strong>",
+                      state_all$POPESTI,
+                      "<br><strong>Confirmed cases (JHU): </strong>",
+                      state_all$Confirmed,
+                      "<br><strong>Deaths (JHU): </strong>",
+                      state_all$Deaths,
+                      "<br><strong>New cases (JHU): </strong>",
+                      state_all$New,
+                      "<br><strong>Postive tests (covidtracking.com): </strong>",
+                      state_all$positive,
+                      "<br><strong>Negative tests: </strong>",
+                      state_all$negative,
+                      "<br><strong>Total test results: </strong>",
+                      state_all$totalTestResults,
+                      "<br><strong>Positive test rate: </strong>",
+                      round(state_all$pos_test_rate, 5),
+                      "<br><strong>Tests per 1000 people: </strong>",
+                      round(state_all$test_per_cap, 5),
+                      "<br><strong>Population density (per kmsq): </strong>",
+                      state_all$pop_density,
+                      "<br><strong>Case rate per 1000 people: </strong>",
+                      state_all$case_rate)
+
 covid_ts <- read_csv("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/covid_us_time_series.csv")
 covid_ts$date <- as_date(covid_ts$date, format = "%m/%d/%Y", tz = "UTC")
 covid_ts <- covid_ts %>% gather(key = "Type", value = "Number", 
@@ -57,6 +89,8 @@ covid_us$date <- as_date(covid_us$date, format = "%m/%d/%Y", tz = "UTC")
 
 states <- covid_ts %>% dplyr::distinct(state) %>% arrange()
 states <- rbind("All US", states)
+
+state_all <- st_read("Data//state_all.geojson")
 
 ui <- fluidPage(
   titlePanel("Covid-19 Cases by State with 10-day Projections"),
@@ -88,7 +122,8 @@ ui <- fluidPage(
       mainPanel(
         tabsetPanel(type = "tabs", 
                     tabPanel("Plot", plotOutput("plot")),
-                    tabPanel("Data", tableOutput("table"))
+                    tabPanel("Data", tableOutput("table")),
+                    tabPanel("US Testing", leafletOutput("usmap"))
         )
       )
     )
@@ -113,6 +148,33 @@ server <- function(input, output){
     }
     dataout}, digits = 0
   )
+  output$usmap <- renderLeaflet({
+    pal_map <- colorQuantile("Blues", domain = state_all$test_per_cap, n = 4)
+    
+    leaflet(test) %>% 
+      addTiles() %>% 
+      addPolygons(color = "gray", weight = 1, smoothFactor = 0.5,
+                  opacity = 0.5, fillOpacity = 0.2, 
+                  fillColor = ~colorQuantile("Blues", test_per_cap, n = 4)
+                  (test_per_cap),
+                  highlightOptions = highlightOptions(color = "gray",
+                                                      weight = 2,
+                                                      bringToFront = T),
+                  popup = state_popup) %>% 
+      addLegend("topright", pal = pal_map, values = ~test_per_cap,
+                title = "Tests Per 1000 People",
+                opacity = 0.5,
+                labFormat = function(type, cuts, p) {
+                  n = length(cuts)
+                  p = paste0(round(p * 100), '%')
+                  cuts = paste0(formatC(cuts[-n]), " - ", formatC(cuts[-1]))
+                  # mouse over the legend labels to see the percentile ranges
+                  paste0(
+                    '<span title="', p[-n], " - ", p[-1], '">', cuts,
+                    '</span>')
+                }
+      )
+  })
 }
 
 shinyApp(ui, server)
