@@ -5,6 +5,7 @@ library(forecast)
 library(scales)
 library(sf)
 library(leaflet)
+library(leaflet.extras)
 
 state_output <- function(input_state){
   if(input_state == "All US") {
