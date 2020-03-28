@@ -78,6 +78,26 @@ state_popup <- paste0("<strong>Covid-19 Data by State</strong>",
                       "<br><strong>Cases per 1000 people: </strong>",
                       round(state_all$case_rate, 5))
 
+county_all <- sf::st_read("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/Data/counties_all.geojson")
+county_popup <- paste0("<strong>Covid-19 Data by County</strong>",
+                       "<br><br><strong>State: </strong>", 
+                       county_all$Province_State, 
+                       "<br><br><strong>County: </strong>", 
+                       county_all$NAMELSA, 
+                       "<br><strong>Date of Data: </strong>", 
+                       county_all$date,
+                       "<br><strong>2018 Population Estimate (census):
+                      </strong>",
+                       county_all$POPESTI,
+                       "<br><strong>Confirmed cases (JHU): </strong>",
+                       county_all$Confirmed,
+                       "<br><strong>Deaths (JHU): </strong>",
+                       county_all$Deaths,
+                       "<br><strong>Population density (per kmsq): </strong>",
+                       round(county_all$pop_density, 2),
+                       "<br><strong>Cases per 1000 people: </strong>",
+                       round(county_all$case_rate, 5))
+
 covid_ts <- read_csv("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/covid_us_time_series.csv")
 covid_ts$date <- as_date(covid_ts$date, format = "%m/%d/%Y", tz = "UTC")
 covid_ts <- covid_ts %>% gather(key = "Type", value = "Number", 
@@ -122,7 +142,8 @@ ui <- fluidPage(
         tabsetPanel(type = "tabs", 
                     tabPanel("Case Projections", plotOutput("plot")),
                     tabPanel("US Testing", leafletOutput("usmap")),
-                    tabPanel("Data", tableOutput("table"))
+                    tabPanel("County Map", leafletOutput("countymap")),
+                    tabPanel("Projection Data", tableOutput("table"))
                     )
         )
       )
@@ -174,7 +195,30 @@ server <- function(input, output){
                     '<span title="', p[-n], " - ", p[-1], '">', cuts,
                     '</span>')
                 }
-      )
+      ) %>% 
+      setView(-103.771556, 44.967243, zoom = 3) %>% 
+      addFullscreenControl()
+  })
+  output$countymap <- renderLeaflet({
+    pal_map <- colorNumeric("Reds", domain = county_all$case_rate)
+    
+    leaflet(county_all) %>% 
+      addTiles() %>% 
+      addPolygons(color = "gray", weight = 0.1, smoothFactor = 0.5,
+                  opacity = 0.8, fillOpacity = 0.7, 
+                  fillColor = ~colorNumeric("Reds", log(case_rate+1))
+                  (log(case_rate+1)),
+                  highlightOptions = highlightOptions(color = "gray",
+                                                      weight = 2,
+                                                      bringToFront = T),
+                  popup = county_popup,
+                  label = ~paste0(NAMELSA, ": ", Confirmed, " confirmed cases."),
+                  labelOptions = labelOptions(direction = "auto")) %>% 
+      addLegend("topright", pal = pal_map, values = ~case_rate,
+                title = "Confirmed Cases<br>Per 1000 People<br>",
+                opacity = 1/exp(1)) %>% 
+      setView(-103.771556, 44.967243, zoom = 3) %>% 
+      addFullscreenControl()
   })
 }
 
