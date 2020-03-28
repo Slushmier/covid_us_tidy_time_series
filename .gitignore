@@ -9,4 +9,5 @@ deployApp.R
 \rsconnect
 testingAnalysis.Rmd
 updateData.R
+updateUsCounties.R
 updateUsStates.R
