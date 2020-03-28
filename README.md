@@ -15,12 +15,15 @@ and territories
 day after the District of Columbia announces new cases or early the following morning. Contains colums for state, date, Confirmed,
 Deaths, Recovered, and New Cases  
 **covid_us_time_series_aggregate.csv** - Same as above; has aggregate counts for whole country  
+**covid_us_time_series_counties.csv** - Same as two above with county counts starting from 23 March 2020.  
 **simplify_spatial.R** - simplifies a TIGR counties shapefile and merges it with population counts; probably only works on my computer  
-**testing_data.R** - Pulls and writes a CSV of the dataset compiled at https://covidtracking.com/api/states/daily  
+**testing_data.R** - Pulls and writes a CSV of the dataset compiled at https://covidtracking.com/api/states/daily to *data/testing_atlantic.csv*   
 
 ### Files in data folder  
 
-**counties_simple.extension** - Provides a US counties shapefile with simplified boundaries  
+**counties_simple shapefile** - Provides a US counties shapefile with simplified boundaries  
 **county_pop.csv** - 2018 Census data of population count by county  
+_**state_all.geojson**_ - Couples testing data and state boundaries, used for map in **app.R**  
 **state_pop.csv** - 2018 Census data of population count by state  
+**states_simple shapefile** - Provides a US states shapefile with simplified boundaries  
 **testing_atlantic.csv** - CSV of data on Covid-19 tests provided by state, compiled from covidtracking.com  
