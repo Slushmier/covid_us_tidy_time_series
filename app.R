@@ -47,6 +47,7 @@ state_output <- function(input_state){
                  limits = (c(disp_date$date - 5, Sys.Date() + 10)))
 }
 
+state_all <- sf::st_read("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/Data/state_all.geojson")
 # Popup for US map, will move
 state_popup <- paste0("<strong>Covid-19 Data by State</strong>",
                       "<br><br><strong>State: </strong>", 
@@ -73,9 +74,9 @@ state_popup <- paste0("<strong>Covid-19 Data by State</strong>",
                       "<br><strong>Tests per 1000 people: </strong>",
                       round(state_all$test_per_cap, 5),
                       "<br><strong>Population density (per kmsq): </strong>",
-                      state_all$pop_density,
-                      "<br><strong>Case rate per 1000 people: </strong>",
-                      state_all$case_rate)
+                      round(state_all$pop_density, 2),
+                      "<br><strong>Cases per 1000 people: </strong>",
+                      round(state_all$case_rate, 5))
 
 covid_ts <- read_csv("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/covid_us_time_series.csv")
 covid_ts$date <- as_date(covid_ts$date, format = "%m/%d/%Y", tz = "UTC")
@@ -89,8 +90,6 @@ covid_us$date <- as_date(covid_us$date, format = "%m/%d/%Y", tz = "UTC")
 
 states <- covid_ts %>% dplyr::distinct(state) %>% arrange()
 states <- rbind("All US", states)
-
-state_all <- st_read("https://raw.githubusercontent.com/Slushmier/covid_us_tidy_time_series/master/Data/state_all.geojson")
 
 ui <- fluidPage(
   titlePanel("Covid-19 Cases by State with 10-day Projections"),
@@ -151,7 +150,7 @@ server <- function(input, output){
   output$usmap <- renderLeaflet({
     pal_map <- colorQuantile("Blues", domain = state_all$test_per_cap, n = 4)
     
-    leaflet(test) %>% 
+    leaflet(state_all) %>% 
       addTiles() %>% 
       addPolygons(color = "gray", weight = 1, smoothFactor = 0.5,
                   opacity = 0.5, fillOpacity = 0.2, 
@@ -160,7 +159,9 @@ server <- function(input, output){
                   highlightOptions = highlightOptions(color = "gray",
                                                       weight = 2,
                                                       bringToFront = T),
-                  popup = state_popup) %>% 
+                  popup = state_popup,
+                  label = ~paste0(stat_nm, ": ", Confirmed, " confirmed cases."),
+                  labelOptions = labelOptions(direction = "auto")) %>% 
       addLegend("topright", pal = pal_map, values = ~test_per_cap,
                 title = "Tests Per 1000 People",
                 opacity = 0.5,
