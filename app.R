@@ -120,30 +120,34 @@ ui <- fluidPage(
     sidebarPanel(
       
       selectInput("stateinput",
-              label = "State:",
+              label = "State for Projections:",
               selected = "All US",
               choices = states),
-        p("The red bands are ten day projections for numbers of Covid-19 cases.
-          The narrow, dark red bands are 95% confidence intervals, the wider, 
-          light red bands are 80% confidence intervals."),
+        p("Testing data comes from from",
+          tags$a(href = "https://covidtracking.com/",
+                 "the Covid Tracking project.")),
         br(),
-        p("Data comes from",
+        p("Case data comes from",
         tags$a(href = "https://github.com/CSSEGISandData/COVID-19",
         "the Johns Hopkins University COVID-19 Github page.")),
         br(),
-        p("Projections are done with the forecast package in R."),
+        p("Projections are done with the forecast package in R. The red bands 
+          are ten day projections for numbers of Covid-19 cases. The narrow, 
+          dark red bands are 95% confidence intervals, the wider, light red 
+          bands are 80% confidence intervals."),
         br(),
         p("Note: I am definitely not an epidemiologist; ask one for more 
-        information on Covid-19.",  
-        tags$a(href = "https://github.com/Slushmier/covid_us_tidy_time_series", 
+        information on Covid-19."),
+        br(),
+        p(tags$a(href = "https://github.com/Slushmier/covid_us_tidy_time_series", 
                     "Here is the GitHub repository for this page."))
       ),
   
       mainPanel(
-        tabsetPanel(type = "tabs", 
-                    tabPanel("Case Projections", plotOutput("plot")),
-                    tabPanel("US Testing", leafletOutput("usmap")),
-                    tabPanel("County Map", leafletOutput("countymap")),
+        tabsetPanel(type = "tabs",
+                    tabPanel("US State Testing", leafletOutput("usmap")),
+                    tabPanel("County Case Map", leafletOutput("countymap")),
+                    tabPanel("State Case Projections", plotOutput("plot")),
                     tabPanel("Projection Data", tableOutput("table"))
                     )
         )
