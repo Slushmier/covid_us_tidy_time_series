@@ -169,16 +169,31 @@ covid_us <- covid_us_ts %>% group_by(date) %>%
          New = Confirmed - lag(Confirmed)) %>%
   replace_na(list(New = 1))
 
-covid_us_ts <- covid_us_ts %>% mutate(Active = Confirmed - Deaths - Recovered,
+covid_us_ts <- covid_us_ts %>% 
+  group_by(state) %>% 
+  mutate_at(c("Confirmed", "Deaths", "Recovered"),
+            ~if_else(. < lag(., default = first(.)), lag(.), .)) %>% 
+  ungroup() %>% 
+  mutate(Active = Confirmed - Deaths - Recovered,
                       New = Confirmed - lag(Confirmed)) %>% 
   replace_na(list(Active = 0, New = 0)) %>% 
   dplyr::filter(!is.na(state)) %>% select(-Recovered)
-
+  
 covid_us$New <- ifelse(covid_us$New < 0, 0, covid_us$New)
 covid_us$Recovered <- ifelse(covid_us$Recovered < lag(covid_us$Recovered),
                              lag(covid_us$Recovered), covid_us$Recovered)
 covid_us <- covid_us %>% replace_na(list(Recovered = 0))
+
+### Fix lags
 covid_us_ts$New <- ifelse(covid_us_ts$New < 0, 0, covid_us_ts$New)
+lag_n_avg <-function(variable, days){
+  count <- 0
+  for(i in 0:(days - 1)) count <- count + lag(variable, n = i, default = first(variable))
+  return(count/days)
+}
+covid_us_ts <- covid_us_ts %>% group_by(state) %>% 
+  mutate(New_3_avg = lag_n_avg(New, 3),
+         New_7_avg = lag_n_avg(New, 7))
 
 write_csv(covid_us_ts_counties, "covid_us_time_series_counties.csv")
 write_csv(covid_us_ts, "covid_us_time_series.csv")
